@@ -2,13 +2,11 @@ package uz.abduraxim.LearningSystem.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
+import uz.abduraxim.LearningSystem.DTO.request.AnswerToQuestion;
+import uz.abduraxim.LearningSystem.mapper.QuestionMapper;
 import uz.abduraxim.LearningSystem.model.Answer;
-import uz.abduraxim.LearningSystem.model.Question;
-import uz.abduraxim.LearningSystem.model.Student;
-import uz.abduraxim.LearningSystem.repository.AnswerRepository;
-import uz.abduraxim.LearningSystem.repository.QuestionOptionRepository;
-import uz.abduraxim.LearningSystem.repository.QuestionRepository;
-import uz.abduraxim.LearningSystem.repository.StudentRepository;
+import uz.abduraxim.LearningSystem.repository.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,28 +22,60 @@ public class StudentService {
 
     private final QuestionOptionRepository questionOptionRep;
 
+    private final SubjectRepository subjectRep;
+
+    private final QuestionMapper questionMapper;
+
+    private final ResponseStructure response = new ResponseStructure();
+
     @Autowired
-    public StudentService(QuestionRepository questionRep, AnswerRepository answerRep, StudentRepository studentRep, QuestionOptionRepository questionOptionRep) {
+    public StudentService(QuestionRepository questionRep, AnswerRepository answerRep, StudentRepository studentRep, QuestionOptionRepository questionOptionRep, SubjectRepository subjectRep, QuestionMapper questionMapper) {
         this.questionRep = questionRep;
         this.answerRep = answerRep;
         this.studentRep = studentRep;
         this.questionOptionRep = questionOptionRep;
+        this.subjectRep = subjectRep;
+        this.questionMapper = questionMapper;
     }
 
-    public boolean answerToQuestion(UUID studentId, UUID questionId, UUID optionId) throws Exception {
-        Student student = studentRep.findById(studentId).orElseThrow(() -> new Exception("Student topilmadi"));
-        Question question = questionRep.findById(questionId).orElseThrow(() -> new Exception("Savol topilmadi"));
-        List<Answer> studentAnswers = student.getAnswerList();
-        if (studentAnswers.stream().noneMatch(answer -> answer.getQuestion().getId().equals(questionId))) {
-            if (question.getOptionList().stream().anyMatch(option -> option.getId().equals(optionId))) {
-                boolean isCorrect = questionOptionRep.findById(optionId).get().isCorrect();
-                answerRep.save(Answer.builder()
-                        .student(student)
-                        .question(question)
-                        .isCorrect(isCorrect)
-                        .build());
-                return isCorrect;
-            } else throw new Exception("Bowqa savol varianti");
-        } else throw new Exception("Siz oldin javob bergansiz");
+    public ResponseStructure getQuestions(String subjectId) {
+        try {
+            response.setSuccess(true);
+            response.setData(questionMapper.toDTO(subjectRep.findById(UUID.fromString(subjectId)).get().getQuestionList()));
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Fan topilmadi");
+        }
+        return response;
+    }
+
+    public ResponseStructure answerToQuestion(UUID studentId, List<AnswerToQuestion> answerList) {
+        long count;
+        try {
+            count = answerList.stream()
+                    .filter(ans -> questionOptionRep.findById(ans.getOptionId()).get().isCorrect())
+                    .count();
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("variant topilmadi");
+            return response;
+        }
+        try {
+            List<Answer> answers = answerList.stream()
+                    .map(ans -> Answer.builder()
+                            .question(questionRep.findById(ans.getQuestionId()).get())
+                            .isCorrect(questionOptionRep.findById(ans.getOptionId()).get().isCorrect())
+                            .student(studentRep.findById(studentId).get())
+                            .build())
+                    .toList();
+            answerRep.saveAll(answers);
+            response.setSuccess(true);
+            response.setData(count);
+            return response;
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("savol topilmadi yoki qandaydir xatolik");
+            return response;
+        }
     }
 }

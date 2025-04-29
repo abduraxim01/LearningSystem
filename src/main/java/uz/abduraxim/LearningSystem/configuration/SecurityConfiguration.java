@@ -47,7 +47,12 @@ public class SecurityConfiguration {
                             .requestMatchers("/api/admin/assignTeacherToSubject").hasRole("ADMIN")
                             .requestMatchers("/api/teacher/addQuestion").hasRole("TEACHER")
                             .requestMatchers("/api/teacher/deleteQuestion/{questionId}").hasRole("TEACHER")
+                            .requestMatchers("/api/admin/getStudentList").hasRole("ADMIN")
+                            .requestMatchers("/api/admin/getTeacherList").hasRole("ADMIN")
                             .requestMatchers("/api/student/answerToQuestion").hasRole("STUDENT")
+                            .requestMatchers("/api/getCurrentUser/{username}").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                            .requestMatchers("/api/student/getQuestions").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                            .requestMatchers("/api/admin/getSubjectList").hasAnyRole("ADMIN", "STUDENT")
                             .anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

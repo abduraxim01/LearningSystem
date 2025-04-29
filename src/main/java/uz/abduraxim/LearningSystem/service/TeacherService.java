@@ -2,7 +2,8 @@ package uz.abduraxim.LearningSystem.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import uz.abduraxim.LearningSystem.DTO.request.QuestionOptionDTOForRequest;
+import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
+import uz.abduraxim.LearningSystem.DTO.request.QuestionOptionRequest;
 import uz.abduraxim.LearningSystem.mapper.QuestionOptionMapper;
 import uz.abduraxim.LearningSystem.model.Question;
 import uz.abduraxim.LearningSystem.model.Subject;
@@ -23,6 +24,8 @@ public class TeacherService {
     private final QuestionOptionMapper questionOptMap;
     private final QuestionOptionRepository questionOptRep;
 
+    private final ResponseStructure response = new ResponseStructure();
+
     @Autowired
     public TeacherService(TeacherRepository teacherRep, QuestionRepository questionRep, QuestionOptionMapper questionOptMap, QuestionOptionRepository questionOptRep) {
         this.teacherRep = teacherRep;
@@ -31,16 +34,34 @@ public class TeacherService {
         this.questionOptRep = questionOptRep;
     }
 
-    public void deleteQuestion(UUID teacherId, UUID questionId) throws Exception {
-        teacherRep.findById(teacherId).orElseThrow(() -> new Exception("Teacher topilmadi"));
-        Question question = questionRep.findById(questionId).orElseThrow(() -> new Exception("Savol topilmadi"));
+    public ResponseStructure deleteQuestion(UUID teacherId, UUID questionId) {
+        Question question = null;
+        try {
+            teacherRep.findById(teacherId).orElseThrow(() -> new Exception("Teacher topilmadi"));
+            question = questionRep.findById(questionId).orElseThrow(() -> new Exception("Savol topilmadi"));
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Ustoz yoki savol topilmadi");
+        }
         if (question.getTeacher().getId().equals(teacherId)) {
             questionRep.delete(question);
-        } else throw new Exception();
+            response.setSuccess(true);
+        } else {
+            response.setSuccess(false);
+            response.setMessage("Savol bowqa birovga tegishli");
+        }
+        return response;
     }
 
-    public void addQuestion(String content, List<QuestionOptionDTOForRequest> optionList, UUID teacherId) throws Exception {
-        Teacher teacher = teacherRep.findById(teacherId).orElseThrow(() -> new Exception("Teacher topilmadi"));
+    public ResponseStructure addQuestion(String content, List<QuestionOptionRequest> optionList, UUID teacherId) {
+        Teacher teacher;
+        try {
+            teacher = teacherRep.findById(teacherId).get();
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Ustoz topilmadi");
+            return response;
+        }
         Subject subject = teacher.getSubject();
         if (questionLimitChecker(teacher.getQuestionList())) {
             if (!questionRep.existsQuestionByContent(content) && optionChecker(optionList)) {
@@ -50,15 +71,23 @@ public class TeacherService {
                         .content(content)
                         .build());
                 questionOptRep.saveAll(questionOptMap.toModel(optionList, question));
-            } else throw new Exception("Savol oldindan mavjud yoki Xato variantlar");
-        } else throw new Exception("Teacher yangi savol qo'sha olmaydi yoki Biror fanga biriltirilmagan");
+                response.setSuccess(true);
+            } else {
+                response.setSuccess(false);
+                response.setMessage("Savol oldindan mavjud yoki Xato variantlar");
+            }
+        } else {
+            response.setSuccess(false);
+            response.setMessage("Teacher yangi savol qo'sha olmaydi");
+        }
+        return response;
     }
 
     public boolean questionLimitChecker(List<Question> questionList) {
         return questionList.size() < 20;
     }
 
-    public boolean optionChecker(List<QuestionOptionDTOForRequest> optionList) {
-        return optionList.stream().filter(QuestionOptionDTOForRequest::isCorrect).toList().size() == 1;
+    public boolean optionChecker(List<QuestionOptionRequest> optionList) {
+        return optionList.stream().filter(QuestionOptionRequest::isCorrect).toList().size() == 1;
     }
 }

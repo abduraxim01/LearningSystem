@@ -12,6 +12,7 @@
 	<artifactId>LearningSystem</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>LearningSystem</name>
+	<packaging>jar</packaging>
 	<description>Learning system app</description>
 	<url/>
 	<licenses>
@@ -73,6 +74,11 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp</artifactId>
+			<version>4.10.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>
