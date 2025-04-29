@@ -25,9 +25,6 @@ public class Question {
     @Column(nullable = false)
     private String content;
 
-    @CreationTimestamp
-    private LocalDateTime created_at;
-
     @ManyToOne
     @JsonBackReference
     @JoinColumn(name = "subject_id")
