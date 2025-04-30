@@ -6,6 +6,7 @@ import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
 import uz.abduraxim.LearningSystem.DTO.request.QuestionOptionRequest;
 import uz.abduraxim.LearningSystem.mapper.QuestionOptionMapper;
 import uz.abduraxim.LearningSystem.model.Question;
+import uz.abduraxim.LearningSystem.model.QuestionOption;
 import uz.abduraxim.LearningSystem.model.Subject;
 import uz.abduraxim.LearningSystem.model.Teacher;
 import uz.abduraxim.LearningSystem.repository.QuestionOptionRepository;
@@ -34,6 +35,26 @@ public class TeacherService {
         this.questionOptRep = questionOptRep;
     }
 
+    public ResponseStructure updateQuestion(String questionId, String content, List<QuestionOptionRequest> optionReqList) {
+        try {
+            Question question = questionRep.findById(UUID.fromString(questionId)).get();
+            question.setContent(content);
+            questionRep.save(question);
+            List<QuestionOption> optionList = question.getOptionList();
+            for (int i = 0; i < 4; i++) {
+                optionList.get(i).setContent(optionReqList.get(i).getContent());
+                optionList.get(i).setCorrect(optionReqList.get(i).isCorrect());
+            }
+            questionOptRep.saveAll(optionList);
+            response.setSuccess(true);
+            response.setMessage("Yangilandi");
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Savol topilmadi yoki ko'zda tutilmagan xato");
+        }
+        return response;
+    }
+
     public ResponseStructure deleteQuestion(UUID teacherId, UUID questionId) {
         Question question = null;
         try {
@@ -46,8 +67,10 @@ public class TeacherService {
         if (question.getTeacher().getId().equals(teacherId)) {
             questionRep.delete(question);
             response.setSuccess(true);
+            response.setMessage("");
         } else {
             response.setSuccess(false);
+            response.setData(null);
             response.setMessage("Savol bowqa birovga tegishli");
         }
         return response;
@@ -59,27 +82,31 @@ public class TeacherService {
             teacher = teacherRep.findById(teacherId).get();
         } catch (Exception e) {
             response.setSuccess(false);
+            response.setData(null);
             response.setMessage("Ustoz topilmadi");
             return response;
         }
         Subject subject = teacher.getSubject();
-        if (questionLimitChecker(teacher.getQuestionList())) {
-            if (!questionRep.existsQuestionByContent(content) && optionChecker(optionList)) {
-                Question question = questionRep.save(Question.builder()
-                        .subject(subject)
-                        .teacher(teacher)
-                        .content(content)
-                        .build());
-                questionOptRep.saveAll(questionOptMap.toModel(optionList, question));
-                response.setSuccess(true);
-            } else {
-                response.setSuccess(false);
-                response.setMessage("Savol oldindan mavjud yoki Xato variantlar");
-            }
+//        if (questionLimitChecker(teacher.getQuestionList())) {
+        if (!questionRep.existsQuestionByContent(content) && optionChecker(optionList)) {
+            Question question = questionRep.save(Question.builder()
+                    .subject(subject)
+                    .teacher(teacher)
+                    .content(content)
+                    .build());
+            questionOptRep.saveAll(questionOptMap.toModel(optionList, question));
+            response.setSuccess(true);
+            response.setMessage("");
+            response.setData(null);
         } else {
             response.setSuccess(false);
-            response.setMessage("Teacher yangi savol qo'sha olmaydi");
+            response.setMessage("Savol oldindan mavjud yoki Xato variantlar");
+            response.setData(null);
         }
+//        } else {
+//            response.setSuccess(false);
+//            response.setMessage("Teacher yangi savol qo'sha olmaydi");
+//        }
         return response;
     }
 

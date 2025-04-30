@@ -19,6 +19,7 @@ import uz.abduraxim.LearningSystem.repository.StudentRepository;
 import uz.abduraxim.LearningSystem.repository.SubjectRepository;
 import uz.abduraxim.LearningSystem.repository.TeacherRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -53,39 +54,126 @@ public class AdminService {
         this.subjectMap = subjectMap;
     }
 
+    public ResponseStructure updateUserDetails(String userId, String newName, String newUsername, String newPassword, MultipartFile file, String isStudent) {
+        if (isHave(newUsername)) {
+            response.setSuccess(false);
+            response.setMessage("Username mavjud");
+        } else {
+            try {
+                String imgUrl = "";
+                if (!file.isEmpty()) {
+                    try {
+                        imgUrl = imageSer.uploadImage(file);
+                    } catch (Exception e) {
+                        response.setSuccess(false);
+                        response.setMessage("Rasm yuklashda xatolik");
+                        return response;
+                    }
+                }
+                if (isStudent.equals("true")) {
+                    Student student = studentRep.findById(UUID.fromString(userId)).get();
+                    student.setName(newName);
+                    student.setPassword(newPassword);
+                    student.setUsername(newUsername);
+                    student.setImageUrl(imgUrl);
+                    studentRep.save(student);
+                } else {
+                    Teacher teacher = teacherRep.findById(UUID.fromString(userId)).get();
+                    teacher.setName(newName);
+                    teacher.setUsername(newUsername);
+                    teacher.setPassword(newPassword);
+                    teacher.setImageUrl(imgUrl);
+                    teacherRep.save(teacher);
+                }
+                response.setSuccess(true);
+                response.setMessage("");
+            } catch (Exception e) {
+                response.setSuccess(false);
+                response.setMessage("User topilmadi yoki ko'zda tutilmagan xatolik");
+            }
+        }
+        return response;
+    }
+
+    public ResponseStructure attachSubject(String studentId, String subjectId) {
+        try {
+            Student student = studentRep.findById(UUID.fromString(studentId)).get();
+            Subject subject = subjectRep.findById(UUID.fromString(subjectId)).get();
+            List<Subject> studentSubjectList = student.getSubject();
+            if (studentSubjectList.stream().anyMatch(sub -> sub.getId() == subject.getId())) {
+                response.setSuccess(false);
+                response.setMessage("Fan oldindan mavjud");
+                return response;
+            }
+            studentSubjectList.add(subject);
+            student.setSubject(studentSubjectList);
+            studentRep.save(student);
+            response.setSuccess(true);
+            response.setMessage("");
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Student yoki Fan topilmadi");
+        }
+        return response;
+    }
+
     public ResponseStructure getSubjectList(Authentication authentication, String isStudent) {
         ResponseStructure response = new ResponseStructure();
-        UUID userId;
-        if (isStudent.equals("true")) {
-            userId = ((Student) authentication.getPrincipal()).getId();
-            Student student = studentRep.findById(userId).get();
-            response.setSuccess(true);
-            response.setData(subjectMap.toDTO(student.getSubject()));
-            System.out.println(response.toString());
-        } else if (isStudent.equals("false")) {
-            userId = ((Teacher) authentication.getPrincipal()).getId();
-            Teacher teacher = teacherRep.findById(userId).get();
-            response.setSuccess(true);
-            response.setData(subjectMap.toDTO(teacher.getSubject()));
+        try {
+            if (isStudent.equals("true")) {
+                UUID userId = ((Student) authentication.getPrincipal()).getId();
+                Student student = studentRep.findById(userId).get();
+                response.setSuccess(true);
+                response.setData(subjectMap.toDTO(student.getSubject()));
+            } else if (isStudent.equals("false")) {
+                response.setSuccess(true);
+                response.setMessage("");
+                response.setData(subjectMap.toDTO(subjectRep.findAll()));
+            }
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Noto'gri so'rov");
         }
         return response;
     }
 
     public ResponseStructure getAllTeachers() {
         response.setSuccess(true);
+        response.setMessage("");
         response.setData(teacherMap.toDTO(teacherRep.findAll()));
         return response;
     }
 
     public ResponseStructure getAllStudents() {
         response.setSuccess(true);
+        response.setMessage("");
         response.setData(studentMap.toDTO(studentRep.findAll()));
+        return response;
+    }
+
+    public ResponseStructure updateSubject(String subjectId, String newName) {
+        if (subjectRep.existsSubjectByName(newName)) {
+            response.setSuccess(false);
+            response.setMessage("Fan nomi oldindan mavjud");
+        } else {
+            try {
+                Subject subject = subjectRep.findById(UUID.fromString(subjectId)).get();
+                subject.setName(newName);
+                subjectRep.save(subject);
+                response.setSuccess(true);
+                response.setMessage("");
+            } catch (Exception e) {
+                response.setSuccess(false);
+                response.setMessage("Fan topilmadi");
+            }
+        }
         return response;
     }
 
     public ResponseStructure addSubject(String name) {
         if (!subjectRep.existsSubjectByName(name)) {
             response.setSuccess(true);
+            response.setMessage("");
             response.setData(subjectRep.save(Subject.builder()
                     .name(name)
                     .build()).getId());

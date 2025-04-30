@@ -24,6 +24,25 @@ public class AdminController {
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
+    @PutMapping(value = "/changeUserDetails/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> changeUserDetails(@PathVariable("userId") String userId,
+                                               @RequestPart("newName") String newName,
+                                               @RequestPart("newUsername") String newUsername,
+                                               @RequestPart("newPassword") String newPassword,
+                                               @RequestPart("newImage") MultipartFile file,
+                                               @RequestPart("student") String isStudent) {
+        return ResponseEntity.ok(adminSer.updateUserDetails(userId, newName, newUsername, newPassword, file, isStudent));
+    }
+
+    @PreAuthorize(value = "hasRole('ADMIN')")
+    @PutMapping(value = "/attachSubject")
+    public ResponseEntity<?> attachSubject(@RequestPart("user") String userId,
+                                           @RequestPart("subject") String subjectId) {
+
+        return ResponseEntity.ok(adminSer.attachSubject(userId, subjectId));
+    }
+
+    @PreAuthorize(value = "hasRole('ADMIN')")
     @PostMapping(value = "/addUser", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> addUser(@RequestPart("user") UserForRegister request,
                                      @RequestPart("subject") String subjectId,
@@ -36,6 +55,13 @@ public class AdminController {
     @PostMapping(value = "/addSubject/{subjectName}")
     public ResponseEntity<?> addSubject(@PathVariable(name = "subjectName") String subjectName) {
         return ResponseEntity.ok(adminSer.addSubject(subjectName));
+    }
+
+    @PreAuthorize(value = "hasRole('ADMIN')")
+    @PutMapping(value = "/updateSubject")
+    public ResponseEntity<?> updateSubject(@RequestPart("name") String newName,
+                                           @RequestPart("id") String subjectId) {
+        return ResponseEntity.ok(adminSer.updateSubject(subjectId, newName));
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")

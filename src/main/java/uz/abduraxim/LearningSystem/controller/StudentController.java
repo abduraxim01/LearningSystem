@@ -26,7 +26,7 @@ public class StudentController {
     @PreAuthorize(value = "hasRole('STUDENT')")
     @PostMapping(value = "/answerToQuestion")
     public ResponseEntity<?> answerToQuestion(@RequestPart("answers") List<AnswerToQuestion> answerList,
-                                              Authentication authentication) throws Exception {
+                                              Authentication authentication) {
         UUID studentId = ((Student) authentication.getPrincipal()).getId();
         return ResponseEntity.ok(studentSer.answerToQuestion(studentId, answerList));
     }
@@ -35,16 +35,5 @@ public class StudentController {
     @GetMapping(value = "/getQuestions")
     public ResponseEntity<?> getQuestions(@RequestPart("subject") String subjectId) {
         return ResponseEntity.ok(studentSer.getQuestions(subjectId));
-    }
-
-    // must add
-    @PreAuthorize(value = "hasRole('STUDENT')")
-//    @PostMapping(value = "/changeStudentDetails")
-    public ResponseEntity<?> changeStudentDetails(@RequestPart("newName") String newName,
-                                                  @RequestPart("newUsername") String newUsername,
-                                                  @RequestPart("newImage") String file,
-                                                  Authentication authentication) {
-        UUID studentId = ((Student) authentication.getPrincipal()).getId();
-        return null;
     }
 }
