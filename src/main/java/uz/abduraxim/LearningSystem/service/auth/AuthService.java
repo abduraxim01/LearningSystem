@@ -1,6 +1,7 @@
 package uz.abduraxim.LearningSystem.service.auth;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -8,13 +9,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
-import uz.abduraxim.LearningSystem.DTO.UserResponse;
 import uz.abduraxim.LearningSystem.DTO.response.AuthResponse;
 import uz.abduraxim.LearningSystem.mapper.StudentMapper;
 import uz.abduraxim.LearningSystem.mapper.TeacherMapper;
+import uz.abduraxim.LearningSystem.model.Student;
+import uz.abduraxim.LearningSystem.model.Teacher;
 import uz.abduraxim.LearningSystem.repository.StudentRepository;
 import uz.abduraxim.LearningSystem.repository.TeacherRepository;
 import uz.abduraxim.LearningSystem.service.jwtService.JwtUtil;
+
+import java.util.UUID;
 
 @Service
 public class AuthService implements UserDetailsService {
@@ -55,12 +59,7 @@ public class AuthService implements UserDetailsService {
     public ResponseStructure login(String username, String password) {
         ResponseStructure response = new ResponseStructure();
         UserDetails user = this.loadUserByUsername(username);
-        if (user == null) {
-            response.setSuccess(false);
-            response.setMessage("Password yoki username xato");
-            return response;
-        }
-        if (encoder.matches(password, user.getPassword())) {
+        if (user != null && encoder.matches(password, user.getPassword())) {
             response.setSuccess(true);
             response.setMessage("Muvafaqqiyatli");
             response.setData(AuthResponse.builder()
@@ -68,17 +67,37 @@ public class AuthService implements UserDetailsService {
                     .role(user.getAuthorities().toString().substring(6, user.getAuthorities().toString().length() - 1))
                     .token(jwtUtil.encode(username, user.getAuthorities()))
                     .build());
+        } else {
+            response.setSuccess(false);
+            response.setMessage("Password yoki username xato");
         }
         return response;
     }
 
-    public ResponseStructure getCurrentUser(String username) {
+    public ResponseStructure getCurrentUser(Authentication authentication, String username) {
+        UUID userId;
         if (studentRep.existsStudentByUsername(username)) {
-            response.setSuccess(true);
-            response.setData(studentMap.toDTO(studentRep.findStudentByUsername(username)));
+            userId = ((Student) authentication.getPrincipal()).getId();
+            Student student = studentRep.findStudentByUsername(username);
+            if (student.getId().equals(userId)) {
+                response.setSuccess(true);
+                response.setMessage("");
+                response.setData(studentMap.toDTO(studentRep.findStudentByUsername(username)));
+            } else {
+                response.setSuccess(false);
+                response.setMessage("Noto'g'ri so'rov");
+            }
         } else if (teacherRep.existsTeacherByUsername(username)) {
-            response.setSuccess(true);
-            response.setData(teacherMap.toDTO(teacherRep.findTeacherByUsername(username)));
+            userId = ((Teacher) authentication.getPrincipal()).getId();
+            Teacher teacher = teacherRep.findTeacherByUsername(username);
+            if (teacher.getId().equals(userId)) {
+                response.setSuccess(true);
+                response.setMessage("");
+                response.setData(teacherMap.toDTO(teacherRep.findTeacherByUsername(username)));
+            } else {
+                response.setSuccess(false);
+                response.setMessage("Noto'g'ri so'rov");
+            }
         } else {
             response.setSuccess(false);
             response.setMessage("User topilmadi");

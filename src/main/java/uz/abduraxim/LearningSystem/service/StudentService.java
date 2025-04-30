@@ -4,10 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
 import uz.abduraxim.LearningSystem.DTO.request.AnswerToQuestion;
+import uz.abduraxim.LearningSystem.DTO.response.QuestionResponse;
 import uz.abduraxim.LearningSystem.mapper.QuestionMapper;
 import uz.abduraxim.LearningSystem.model.Answer;
+import uz.abduraxim.LearningSystem.model.Question;
 import uz.abduraxim.LearningSystem.repository.*;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,11 +44,20 @@ public class StudentService {
 
     public ResponseStructure getQuestions(String subjectId) {
         try {
-            response.setSuccess(true);
-            response.setData(questionMapper.toDTO(subjectRep.findById(UUID.fromString(subjectId)).get().getQuestionList()));
+            List<Question> questionList = subjectRep.findById(UUID.fromString(subjectId)).get().getQuestionList();
+            Collections.shuffle(questionList);
+            List<QuestionResponse> responseList = questionMapper.toDTO(questionList.stream().limit(20).toList());
+            if (responseList.size() < 20) {
+                response.setSuccess(false);
+                response.setMessage("Testlar soni kam");
+            }else{
+                response.setSuccess(true);
+                response.setData(responseList);
+            }
         } catch (Exception e) {
             response.setSuccess(false);
             response.setMessage("Fan topilmadi");
+            response.setData(null);
         }
         return response;
     }

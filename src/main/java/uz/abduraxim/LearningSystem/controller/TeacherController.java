@@ -33,8 +33,16 @@ public class TeacherController {
     }
 
     @PreAuthorize(value = "hasRole('TEACHER')")
+    @PutMapping(value = "/updateQuestion/{questionId}")
+    public ResponseEntity<?> updateQuestion(@PathVariable("questionId") String questionId,
+                                            @RequestPart("question") String content,
+                                            @RequestPart("options") List<QuestionOptionRequest> optionList) {
+        return ResponseEntity.ok(teacherSer.updateQuestion(questionId, content, optionList));
+    }
+
+    @PreAuthorize(value = "hasRole('TEACHER')")
     @DeleteMapping(value = "/deleteQuestion/{questionId}")
-    public ResponseEntity<?> deleteQuestion(@PathVariable("questionId") String questionId, Authentication authentication) throws Exception {
+    public ResponseEntity<?> deleteQuestion(@PathVariable("questionId") String questionId, Authentication authentication){
         UUID teacherId = ((Teacher) authentication.getPrincipal()).getId();
         return ResponseEntity.ok(teacherSer.deleteQuestion(teacherId, UUID.fromString(questionId)));
     }

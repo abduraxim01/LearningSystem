@@ -3,6 +3,7 @@ package uz.abduraxim.LearningSystem.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
 import uz.abduraxim.LearningSystem.service.auth.AuthService;
@@ -24,10 +25,10 @@ public class AuthController {
         return ResponseEntity.ok(login.login(username, password));
     }
 
-    // must add
     @PreAuthorize(value = "hasAnyRole('ADMIN','TEACHER','STUDENT')")
     @GetMapping(value = "/getCurrentUser/{username}")
-    public ResponseEntity<?> getCurrentUser(@PathVariable("username") String username) {
-        return ResponseEntity.ok(login.getCurrentUser(username));
+    public ResponseEntity<?> getCurrentUser(@PathVariable("username") String username,
+                                            Authentication authentication) {
+        return ResponseEntity.ok(login.getCurrentUser(authentication,username));
     }
 }
