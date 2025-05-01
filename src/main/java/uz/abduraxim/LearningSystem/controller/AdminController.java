@@ -52,9 +52,23 @@ public class AdminController {
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
+    @DeleteMapping(value = "/deleteUser")
+    public ResponseEntity<?> deleteUser(@RequestPart("student") String isStudent,
+                                        @RequestPart("id") String userId) {
+        return ResponseEntity.ok(adminSer.deleteUser(userId, isStudent));
+    }
+
+
+    @PreAuthorize(value = "hasRole('ADMIN')")
     @PostMapping(value = "/addSubject/{subjectName}")
     public ResponseEntity<?> addSubject(@PathVariable(name = "subjectName") String subjectName) {
         return ResponseEntity.ok(adminSer.addSubject(subjectName));
+    }
+
+    @PreAuthorize(value = "hasRole('TEACHER')")
+    @DeleteMapping(value = "/deleteSubject/{subjectId}")
+    public ResponseEntity<?> deleteSubject(@PathVariable("subjectId") String subjectId) {
+        return ResponseEntity.ok(adminSer.deleteSubject(subjectId));
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
@@ -76,7 +90,7 @@ public class AdminController {
         return ResponseEntity.ok(adminSer.getAllStudents());
     }
 
-    @PreAuthorize(value = "hasAnyRole('ADMIN', 'STUDENT')")
+    @PreAuthorize(value = "hasAnyRole('ADMIN', 'STUDENT', 'TEACHER')")
     @GetMapping(value = "/getSubjectList")
     public ResponseEntity<?> getSubjectList(@RequestPart("student") String isStudent,
                                             Authentication authentication) {

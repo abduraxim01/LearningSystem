@@ -31,6 +31,7 @@ public class QuestionOptionMapper {
         return QuestionOptionResponse.builder()
                 .id(option.getId())
                 .content(option.getContent())
+                .correct(option.isCorrect())
                 .build();
     }
 

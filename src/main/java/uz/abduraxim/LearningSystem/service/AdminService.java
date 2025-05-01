@@ -54,6 +54,25 @@ public class AdminService {
         this.subjectMap = subjectMap;
     }
 
+    public ResponseStructure deleteUser(String userId, String isStudent) {
+        try {
+            UUID id = UUID.fromString(userId);
+            if (isStudent.equals("true")) {
+                studentRep.deleteById(id);
+                response.setSuccess(true);
+                response.setMessage("o'chirildi");
+            } else {
+                teacherRep.deleteById(id);
+                response.setSuccess(true);
+                response.setMessage("o'chirildi");
+            }
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("User topilmadi");
+        }
+        return response;
+    }
+
     public ResponseStructure updateUserDetails(String userId, String newName, String newUsername, String newPassword, MultipartFile file, String isStudent) {
         if (isHave(newUsername)) {
             response.setSuccess(false);
@@ -166,6 +185,21 @@ public class AdminService {
                 response.setSuccess(false);
                 response.setMessage("Fan topilmadi");
             }
+        }
+        return response;
+    }
+
+    public ResponseStructure deleteSubject(String subjectId) {
+        try {
+            UUID id = UUID.fromString(subjectId);
+            subjectRep.deleteById(id);
+            response.setSuccess(true);
+            response.setData(null);
+            response.setMessage(null);
+        } catch (Exception e) {
+            response.setMessage("Topilmadi");
+            response.setSuccess(true);
+            response.setData(null);
         }
         return response;
     }
