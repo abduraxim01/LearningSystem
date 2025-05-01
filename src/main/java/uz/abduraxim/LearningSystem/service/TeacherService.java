@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
 import uz.abduraxim.LearningSystem.DTO.request.QuestionOptionRequest;
+import uz.abduraxim.LearningSystem.mapper.QuestionMapper;
 import uz.abduraxim.LearningSystem.mapper.QuestionOptionMapper;
 import uz.abduraxim.LearningSystem.model.Question;
 import uz.abduraxim.LearningSystem.model.QuestionOption;
@@ -26,13 +27,28 @@ public class TeacherService {
     private final QuestionOptionRepository questionOptRep;
 
     private final ResponseStructure response = new ResponseStructure();
+    private final QuestionMapper questionMap;
 
     @Autowired
-    public TeacherService(TeacherRepository teacherRep, QuestionRepository questionRep, QuestionOptionMapper questionOptMap, QuestionOptionRepository questionOptRep) {
+    public TeacherService(TeacherRepository teacherRep, QuestionRepository questionRep, QuestionOptionMapper questionOptMap, QuestionOptionRepository questionOptRep, QuestionMapper questionMap) {
         this.teacherRep = teacherRep;
         this.questionRep = questionRep;
         this.questionOptMap = questionOptMap;
         this.questionOptRep = questionOptRep;
+        this.questionMap = questionMap;
+    }
+
+    public ResponseStructure getQuestions(String username) {
+        try {
+            Teacher teacher = teacherRep.findTeacherByUsername(username);
+            response.setSuccess(true);
+            response.setData(questionMap.toDTO(teacher.getSubject().getQuestionList()));
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Username topilmadi");
+            response.setData(null);
+        }
+        return response;
     }
 
     public ResponseStructure updateQuestion(String questionId, String content, List<QuestionOptionRequest> optionReqList) {

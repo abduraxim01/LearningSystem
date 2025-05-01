@@ -14,4 +14,6 @@ public class QuestionOptionResponse {
     private UUID id;
 
     private String content;
+
+    private boolean correct;
 }

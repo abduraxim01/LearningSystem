@@ -1,6 +1,5 @@
 package uz.abduraxim.LearningSystem.DTO.response;
 
-import jakarta.persistence.Column;
 import lombok.*;
 
 import java.util.List;

@@ -42,8 +42,14 @@ public class TeacherController {
 
     @PreAuthorize(value = "hasRole('TEACHER')")
     @DeleteMapping(value = "/deleteQuestion/{questionId}")
-    public ResponseEntity<?> deleteQuestion(@PathVariable("questionId") String questionId, Authentication authentication){
+    public ResponseEntity<?> deleteQuestion(@PathVariable("questionId") String questionId, Authentication authentication) {
         UUID teacherId = ((Teacher) authentication.getPrincipal()).getId();
         return ResponseEntity.ok(teacherSer.deleteQuestion(teacherId, UUID.fromString(questionId)));
+    }
+
+    @PreAuthorize(value = "hasRole('TEACHER')")
+    @GetMapping(value = "/getQuestions/{username}")
+    public ResponseEntity<?> getQuestions(@PathVariable("username") String username) {
+        return ResponseEntity.ok(teacherSer.getQuestions(username));
     }
 }
