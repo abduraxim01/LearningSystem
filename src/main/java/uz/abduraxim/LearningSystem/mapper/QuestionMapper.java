@@ -27,7 +27,7 @@ public class QuestionMapper {
     }
 
     public List<QuestionResponse> toDTO(List<Question> questionList) {
-        if (questionList.isEmpty()) return new ArrayList<>();
+        if (questionList == null) return new ArrayList<>();
         return questionList.stream()
                 .map(this::toDTO)
                 .toList();

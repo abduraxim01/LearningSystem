@@ -86,6 +86,7 @@ public class AuthService implements UserDetailsService {
             } else {
                 response.setSuccess(false);
                 response.setMessage("Noto'g'ri so'rov");
+                response.setData(null);
             }
         } else if (teacherRep.existsTeacherByUsername(username)) {
             userId = ((Teacher) authentication.getPrincipal()).getId();
@@ -97,10 +98,12 @@ public class AuthService implements UserDetailsService {
             } else {
                 response.setSuccess(false);
                 response.setMessage("Noto'g'ri so'rov");
+                response.setData(null);
             }
         } else {
             response.setSuccess(false);
             response.setMessage("User topilmadi");
+            response.setData(null);
         }
         return response;
     }

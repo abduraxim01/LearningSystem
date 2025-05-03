@@ -9,6 +9,9 @@ import java.util.UUID;
 @Repository
 public interface StudentRepository extends JpaRepository<Student, UUID> {
 
+    void deleteStudentByUsername(String username);
+
     boolean existsStudentByUsername(String username);
+
     Student findStudentByUsername(String username);
 }

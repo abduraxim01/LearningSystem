@@ -19,5 +19,7 @@ public class UserForRegister {
 
     private String password;
 
-    private boolean isStudent;
+    private String imgUrl;
+
+    private Boolean isStudent;
 }

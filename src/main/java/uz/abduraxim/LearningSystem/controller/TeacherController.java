@@ -5,11 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import uz.abduraxim.LearningSystem.DTO.request.QuestionOptionRequest;
-import uz.abduraxim.LearningSystem.model.Teacher;
+import uz.abduraxim.LearningSystem.DTO.request.QuestionRequest;
 import uz.abduraxim.LearningSystem.service.TeacherService;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -25,31 +23,27 @@ public class TeacherController {
 
     @PreAuthorize(value = "hasRole('TEACHER')")
     @PostMapping(value = "/addQuestion")
-    public ResponseEntity<?> addQuestion(@RequestPart("question") String content,
-                                         @RequestPart("options") List<QuestionOptionRequest> optionList,
+    public ResponseEntity<?> addQuestion(@RequestBody QuestionRequest request,
                                          Authentication authentication) {
-        UUID teacherId = ((Teacher) authentication.getPrincipal()).getId();
-        return ResponseEntity.ok(teacherSer.addQuestion(content, optionList, teacherId));
+        return ResponseEntity.ok(teacherSer.addQuestion(request.getContent(), request.getOptionList(), authentication));
     }
 
     @PreAuthorize(value = "hasRole('TEACHER')")
     @PutMapping(value = "/updateQuestion/{questionId}")
-    public ResponseEntity<?> updateQuestion(@PathVariable("questionId") String questionId,
-                                            @RequestPart("question") String content,
-                                            @RequestPart("options") List<QuestionOptionRequest> optionList) {
-        return ResponseEntity.ok(teacherSer.updateQuestion(questionId, content, optionList));
+    public ResponseEntity<?> updateQuestion(@PathVariable String questionId,
+                                            @RequestBody QuestionRequest request) {
+        return ResponseEntity.ok(teacherSer.updateQuestion(questionId, request.getContent(), request.getOptionList()));
     }
 
     @PreAuthorize(value = "hasRole('TEACHER')")
     @DeleteMapping(value = "/deleteQuestion/{questionId}")
-    public ResponseEntity<?> deleteQuestion(@PathVariable("questionId") String questionId, Authentication authentication) {
-        UUID teacherId = ((Teacher) authentication.getPrincipal()).getId();
-        return ResponseEntity.ok(teacherSer.deleteQuestion(teacherId, UUID.fromString(questionId)));
+    public ResponseEntity<?> deleteQuestion(@PathVariable String questionId, Authentication authentication) {
+        return ResponseEntity.ok(teacherSer.deleteQuestion(authentication, UUID.fromString(questionId)));
     }
 
     @PreAuthorize(value = "hasRole('TEACHER')")
-    @GetMapping(value = "/getQuestions/{username}")
-    public ResponseEntity<?> getQuestions(@PathVariable("username") String username) {
-        return ResponseEntity.ok(teacherSer.getQuestions(username));
+    @GetMapping(value = "/getQuestions")
+    public ResponseEntity<?> getQuestions(Authentication authentication) {
+        return ResponseEntity.ok(teacherSer.getQuestions("", authentication));
     }
 }
