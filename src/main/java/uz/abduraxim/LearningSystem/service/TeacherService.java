@@ -1,6 +1,7 @@
 package uz.abduraxim.LearningSystem.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
 import uz.abduraxim.LearningSystem.DTO.request.QuestionOptionRequest;
@@ -38,14 +39,15 @@ public class TeacherService {
         this.questionMap = questionMap;
     }
 
-    public ResponseStructure getQuestions(String username) {
+    public ResponseStructure getQuestions(String str, Authentication authentication) {
         try {
-            Teacher teacher = teacherRep.findTeacherByUsername(username);
+            UUID id = ((Teacher) authentication.getPrincipal()).getId();
             response.setSuccess(true);
-            response.setData(questionMap.toDTO(teacher.getSubject().getQuestionList()));
+            response.setMessage(str);
+            response.setData(questionMap.toDTO(teacherRep.findById(id).get().getSubject().getQuestionList()));
         } catch (Exception e) {
             response.setSuccess(false);
-            response.setMessage("Username topilmadi");
+            response.setMessage("Qandaydir xatolik");
             response.setData(null);
         }
         return response;
@@ -68,22 +70,28 @@ public class TeacherService {
             response.setSuccess(false);
             response.setMessage("Savol topilmadi yoki ko'zda tutilmagan xato");
         }
+        response.setData(null);
         return response;
     }
 
-    public ResponseStructure deleteQuestion(UUID teacherId, UUID questionId) {
-        Question question = null;
+    public ResponseStructure deleteQuestion(Authentication authentication, UUID questionId) {
+        Question question;
+        UUID teacherId;
         try {
-            teacherRep.findById(teacherId).orElseThrow(() -> new Exception("Teacher topilmadi"));
-            question = questionRep.findById(questionId).orElseThrow(() -> new Exception("Savol topilmadi"));
+            teacherId = ((Teacher) authentication.getPrincipal()).getId();
+            teacherRep.findById(teacherId).orElseThrow();
+            question = questionRep.findById(questionId).get();
         } catch (Exception e) {
             response.setSuccess(false);
             response.setMessage("Ustoz yoki savol topilmadi");
+            response.setData(null);
+            return response;
         }
         if (question.getTeacher().getId().equals(teacherId)) {
             questionRep.delete(question);
             response.setSuccess(true);
             response.setMessage("");
+            response.setData(null);
         } else {
             response.setSuccess(false);
             response.setData(null);
@@ -92,18 +100,18 @@ public class TeacherService {
         return response;
     }
 
-    public ResponseStructure addQuestion(String content, List<QuestionOptionRequest> optionList, UUID teacherId) {
+    public ResponseStructure addQuestion(String content, List<QuestionOptionRequest> optionList, Authentication authentication) {
         Teacher teacher;
+        response.setData(null);
         try {
+            UUID teacherId = ((Teacher) authentication.getPrincipal()).getId();
             teacher = teacherRep.findById(teacherId).get();
         } catch (Exception e) {
             response.setSuccess(false);
-            response.setData(null);
             response.setMessage("Ustoz topilmadi");
             return response;
         }
         Subject subject = teacher.getSubject();
-//        if (questionLimitChecker(teacher.getQuestionList())) {
         if (!questionRep.existsQuestionByContent(content) && optionChecker(optionList)) {
             Question question = questionRep.save(Question.builder()
                     .subject(subject)
@@ -113,21 +121,11 @@ public class TeacherService {
             questionOptRep.saveAll(questionOptMap.toModel(optionList, question));
             response.setSuccess(true);
             response.setMessage("");
-            response.setData(null);
         } else {
             response.setSuccess(false);
             response.setMessage("Savol oldindan mavjud yoki Xato variantlar");
-            response.setData(null);
         }
-//        } else {
-//            response.setSuccess(false);
-//            response.setMessage("Teacher yangi savol qo'sha olmaydi");
-//        }
         return response;
-    }
-
-    public boolean questionLimitChecker(List<Question> questionList) {
-        return questionList.size() < 20;
     }
 
     public boolean optionChecker(List<QuestionOptionRequest> optionList) {

@@ -7,6 +7,7 @@ import okhttp3.RequestBody;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -22,7 +23,9 @@ public class ImageService {
 
     private final OkHttpClient client = new OkHttpClient();
 
-    public String uploadImage(MultipartFile image) throws Exception {
+    private final ResponseStructure response = new ResponseStructure();
+
+    public ResponseStructure uploadImage(MultipartFile image) throws Exception {
         String filePath = UUID.randomUUID() + "_" + System.currentTimeMillis() + ".png";
         String imageUrl = SUPABASE_URL + "/storage/v1/object/learning-system/" + filePath;
         try {
@@ -38,13 +41,19 @@ public class ImageService {
                     .build();
             try {
                 client.newCall(request).execute();
-                return imageUrl;
+                response.setSuccess(true);
+                response.setMessage("Yuklandi");
+                response.setData(imageUrl);
             } catch (Exception e) {
-
-                throw new Exception("Failed to upload image");
+                response.setSuccess(false);
+                response.setMessage("Yuklanmadi");
+                response.setData(null);
             }
         } catch (IOException e) {
-            throw new Exception("Problem with image");
+            response.setSuccess(false);
+            response.setMessage("Yuklanmadi");
+            response.setData(null);
         }
+        return response;
     }
 }

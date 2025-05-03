@@ -10,7 +10,15 @@ import lombok.*;
 @Builder
 public class UserForChangeDetails {
 
+    private String id;
+
     private String newName;
 
     private String newUsername;
+
+    private String newPassword;
+
+    private String imgUrl;
+
+    private Boolean isStudent;
 }

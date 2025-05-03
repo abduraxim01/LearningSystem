@@ -23,17 +23,17 @@ public class StudentController {
         this.studentSer = studentSer;
     }
 
+    // changed
     @PreAuthorize(value = "hasRole('STUDENT')")
     @PostMapping(value = "/answerToQuestion")
-    public ResponseEntity<?> answerToQuestion(@RequestPart("answers") List<AnswerToQuestion> answerList,
+    public ResponseEntity<?> answerToQuestion(@RequestBody List<AnswerToQuestion> answerList,
                                               Authentication authentication) {
-        UUID studentId = ((Student) authentication.getPrincipal()).getId();
-        return ResponseEntity.ok(studentSer.answerToQuestion(studentId, answerList));
+        return ResponseEntity.ok(studentSer.answerToQuestion(authentication, answerList));
     }
 
-    @PreAuthorize(value = "hasAnyRole('STUDENT','TEACHER','ADMIN')")
-    @GetMapping(value = "/getQuestions")
-    public ResponseEntity<?> getQuestions(@RequestPart("subject") String subjectId) {
+    @PreAuthorize(value = "hasAnyRole('STUDENT','ADMIN')")
+    @GetMapping(value = "/getQuestions/{subjectId}")
+    public ResponseEntity<?> getQuestions(@PathVariable String subjectId) {
         return ResponseEntity.ok(studentSer.getQuestions(subjectId));
     }
 }

@@ -9,6 +9,8 @@ import java.util.UUID;
 @Repository
 public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
 
+    void deleteTeacherByUsername(String username);
+
     boolean existsTeacherByUsername(String username);
 
     Teacher findTeacherByUsername(String username);

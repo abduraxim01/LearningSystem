@@ -7,10 +7,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import uz.abduraxim.LearningSystem.DTO.request.AttachSubject;
+import uz.abduraxim.LearningSystem.DTO.request.SubjectRequest;
+import uz.abduraxim.LearningSystem.DTO.request.UserForChangeDetails;
 import uz.abduraxim.LearningSystem.DTO.request.UserForRegister;
 import uz.abduraxim.LearningSystem.service.AdminService;
-
-import java.util.UUID;
+import uz.abduraxim.LearningSystem.service.ImageService;
 
 @RestController
 @RequestMapping(value = "/api/admin")
@@ -18,64 +20,61 @@ public class AdminController {
 
     private final AdminService adminSer;
 
+    private final ImageService imageSer;
+
     @Autowired
-    public AdminController(AdminService adminSer) {
+    public AdminController(AdminService adminSer, ImageService imageSer) {
         this.adminSer = adminSer;
+        this.imageSer = imageSer;
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
-    @PutMapping(value = "/changeUserDetails/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> changeUserDetails(@PathVariable("userId") String userId,
-                                               @RequestPart("newName") String newName,
-                                               @RequestPart("newUsername") String newUsername,
-                                               @RequestPart("newPassword") String newPassword,
-                                               @RequestPart("newImage") MultipartFile file,
-                                               @RequestPart("student") String isStudent) {
-        return ResponseEntity.ok(adminSer.updateUserDetails(userId, newName, newUsername, newPassword, file, isStudent));
+    @PutMapping(value = "/changeUserDetails")
+    public ResponseEntity<?> changeUserDetails(@RequestBody UserForChangeDetails details) {
+        return ResponseEntity.ok(adminSer.updateUserDetails(details.getId(), details.getNewName(), details.getNewUsername(), details.getNewPassword(), details.getImgUrl(), details.getIsStudent()));
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
     @PutMapping(value = "/attachSubject")
-    public ResponseEntity<?> attachSubject(@RequestPart("user") String userId,
-                                           @RequestPart("subject") String subjectId) {
-
-        return ResponseEntity.ok(adminSer.attachSubject(userId, subjectId));
+    public ResponseEntity<?> attachSubject(@RequestBody AttachSubject attachSubject) {
+        return ResponseEntity.ok(adminSer.attachSubject(attachSubject));
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
-    @PostMapping(value = "/addUser", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> addUser(@RequestPart("user") UserForRegister request,
-                                     @RequestPart("subject") String subjectId,
-                                     @RequestPart("image") MultipartFile file) {
-        UUID uuid = UUID.fromString(subjectId);
-        return ResponseEntity.ok(adminSer.addUser(request, file, uuid));
+    @PostMapping(value = "/addUser/{subjectId}")
+    public ResponseEntity<?> addUser(@RequestBody UserForRegister request,
+                                     @PathVariable String subjectId) {
+        return ResponseEntity.ok(adminSer.addUser(request, subjectId));
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
-    @DeleteMapping(value = "/deleteUser")
-    public ResponseEntity<?> deleteUser(@RequestPart("student") String isStudent,
-                                        @RequestPart("id") String userId) {
-        return ResponseEntity.ok(adminSer.deleteUser(userId, isStudent));
+    @PostMapping(value = "/uploadImage", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadImage(@RequestPart("image") MultipartFile file) throws Exception {
+        return ResponseEntity.ok(imageSer.uploadImage(file));
     }
 
+    @PreAuthorize(value = "hasRole('ADMIN')")
+    @DeleteMapping(value = "/deleteUser/{username}")
+    public ResponseEntity<?> deleteUser(@PathVariable String username) {
+        return ResponseEntity.ok(adminSer.deleteUser(username));
+    }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
-    @PostMapping(value = "/addSubject/{subjectName}")
-    public ResponseEntity<?> addSubject(@PathVariable(name = "subjectName") String subjectName) {
-        return ResponseEntity.ok(adminSer.addSubject(subjectName));
+    @PostMapping(value = "/addSubject")
+    public ResponseEntity<?> addSubject(@RequestBody SubjectRequest subject) {
+        return ResponseEntity.ok(adminSer.addSubject(subject.getName()));
     }
 
     @PreAuthorize(value = "hasRole('TEACHER')")
     @DeleteMapping(value = "/deleteSubject/{subjectId}")
-    public ResponseEntity<?> deleteSubject(@PathVariable("subjectId") String subjectId) {
+    public ResponseEntity<?> deleteSubject(@PathVariable String subjectId) {
         return ResponseEntity.ok(adminSer.deleteSubject(subjectId));
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
     @PutMapping(value = "/updateSubject")
-    public ResponseEntity<?> updateSubject(@RequestPart("name") String newName,
-                                           @RequestPart("id") String subjectId) {
-        return ResponseEntity.ok(adminSer.updateSubject(subjectId, newName));
+    public ResponseEntity<?> updateSubject(@RequestBody SubjectRequest subject) {
+        return ResponseEntity.ok(adminSer.updateSubject(subject.getId(), subject.getName()));
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
@@ -90,9 +89,9 @@ public class AdminController {
         return ResponseEntity.ok(adminSer.getAllStudents());
     }
 
-    @PreAuthorize(value = "hasAnyRole('ADMIN', 'STUDENT', 'TEACHER')")
-    @GetMapping(value = "/getSubjectList")
-    public ResponseEntity<?> getSubjectList(@RequestPart("student") String isStudent,
+    @PreAuthorize(value = "hasAnyRole('ADMIN', 'STUDENT')")
+    @GetMapping(value = "/getSubjectList/{isStudent}")
+    public ResponseEntity<?> getSubjectList(@PathVariable String isStudent,
                                             Authentication authentication) {
         return ResponseEntity.ok(adminSer.getSubjectList(authentication, isStudent));
     }

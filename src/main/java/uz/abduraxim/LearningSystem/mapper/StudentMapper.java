@@ -3,7 +3,7 @@ package uz.abduraxim.LearningSystem.mapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import uz.abduraxim.LearningSystem.DTO.UserResponse;
+import uz.abduraxim.LearningSystem.DTO.response.UserResponse;
 import uz.abduraxim.LearningSystem.DTO.request.UserForRegister;
 import uz.abduraxim.LearningSystem.model.Role;
 import uz.abduraxim.LearningSystem.model.Student;
@@ -17,13 +17,21 @@ public class StudentMapper {
 
     final private PasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    public Student toModel(UserForRegister user, Subject subject, String imgUrl) {
+    public Student toModel(Student student, String newName, String newUsername, String newPassword, String imgUrl) {
+        student.setName(newName);
+        student.setUsername(newUsername);
+        student.setPassword(encoder.encode(newPassword));
+        if (imgUrl != null) student.setImageUrl(imgUrl);
+        return student;
+    }
+
+    public Student toModel(UserForRegister user, Subject subject) {
         return Student.builder()
                 .name(user.getName())
                 .password(encoder.encode(user.getPassword()))
                 .username(user.getUsername())
                 .subject(List.of(subject))
-                .imageUrl(imgUrl)
+                .imageUrl(user.getImgUrl())
                 .role(Role.STUDENT)
                 .build();
     }

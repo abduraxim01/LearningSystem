@@ -1,13 +1,14 @@
 package uz.abduraxim.LearningSystem.service;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
+import uz.abduraxim.LearningSystem.DTO.request.AttachSubject;
 import uz.abduraxim.LearningSystem.DTO.request.UserForRegister;
 import uz.abduraxim.LearningSystem.mapper.StudentMapper;
 import uz.abduraxim.LearningSystem.mapper.SubjectMapper;
@@ -19,6 +20,7 @@ import uz.abduraxim.LearningSystem.repository.StudentRepository;
 import uz.abduraxim.LearningSystem.repository.SubjectRepository;
 import uz.abduraxim.LearningSystem.repository.TeacherRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,101 +39,87 @@ public class AdminService {
 
     private final SubjectRepository subjectRep;
 
-    private final ImageService imageSer;
-
     private final SubjectMapper subjectMap;
 
     private final ResponseStructure response = new ResponseStructure();
 
     @Autowired
-    public AdminService(TeacherRepository teacherRep, StudentRepository studentRep, TeacherMapper teacherMap, StudentMapper studentMap, SubjectRepository subjectRep, ImageService imageSer, SubjectMapper subjectMap) {
+    public AdminService(TeacherRepository teacherRep, StudentRepository studentRep, TeacherMapper teacherMap, StudentMapper studentMap, SubjectRepository subjectRep, SubjectMapper subjectMap) {
         this.teacherRep = teacherRep;
         this.studentRep = studentRep;
         this.teacherMap = teacherMap;
         this.studentMap = studentMap;
         this.subjectRep = subjectRep;
-        this.imageSer = imageSer;
         this.subjectMap = subjectMap;
     }
 
-    public ResponseStructure deleteUser(String userId, String isStudent) {
-        try {
-            UUID id = UUID.fromString(userId);
-            if (isStudent.equals("true")) {
-                studentRep.deleteById(id);
-                response.setSuccess(true);
-                response.setMessage("o'chirildi");
-            } else {
-                teacherRep.deleteById(id);
-                response.setSuccess(true);
-                response.setMessage("o'chirildi");
-            }
-        } catch (Exception e) {
+    @Transactional
+    public ResponseStructure deleteUser(String username) {
+        boolean studentExists = studentRep.existsStudentByUsername(username);
+        boolean teacherExists = teacherRep.existsTeacherByUsername(username);
+        if (studentExists || teacherExists) {
+            if (studentExists) studentRep.deleteStudentByUsername(username);
+            if (teacherExists) teacherRep.deleteTeacherByUsername(username);
+            response.setSuccess(true);
+            response.setMessage("O'chirildi");
+        } else {
             response.setSuccess(false);
-            response.setMessage("User topilmadi");
+            response.setMessage("Foydalanuvchi topilmadi");
         }
+        response.setData(null); // Optional: add info about the deleted user
         return response;
     }
 
-    public ResponseStructure updateUserDetails(String userId, String newName, String newUsername, String newPassword, MultipartFile file, String isStudent) {
+    public ResponseStructure updateUserDetails(String userId, String newName, String newUsername, String newPassword, String imgUrl, boolean isStudent) {
         if (isHave(newUsername)) {
             response.setSuccess(false);
             response.setMessage("Username mavjud");
+            response.setData(null);
         } else {
             try {
-                String imgUrl = "";
-                if (!file.isEmpty()) {
-                    try {
-                        imgUrl = imageSer.uploadImage(file);
-                    } catch (Exception e) {
-                        response.setSuccess(false);
-                        response.setMessage("Rasm yuklashda xatolik");
-                        return response;
-                    }
-                }
-                if (isStudent.equals("true")) {
+                if (isStudent) {
                     Student student = studentRep.findById(UUID.fromString(userId)).get();
-                    student.setName(newName);
-                    student.setPassword(newPassword);
-                    student.setUsername(newUsername);
-                    student.setImageUrl(imgUrl);
-                    studentRep.save(student);
+                    studentRep.save(studentMap.toModel(student, newName, newUsername, newPassword, imgUrl));
                 } else {
                     Teacher teacher = teacherRep.findById(UUID.fromString(userId)).get();
-                    teacher.setName(newName);
-                    teacher.setUsername(newUsername);
-                    teacher.setPassword(newPassword);
-                    teacher.setImageUrl(imgUrl);
-                    teacherRep.save(teacher);
+                    teacherRep.save(teacherMap.toModel(teacher, newName, newUsername, newPassword, imgUrl));
                 }
                 response.setSuccess(true);
                 response.setMessage("");
+                response.setData(null);
             } catch (Exception e) {
                 response.setSuccess(false);
                 response.setMessage("User topilmadi yoki ko'zda tutilmagan xatolik");
+                response.setData(null);
             }
         }
         return response;
     }
 
-    public ResponseStructure attachSubject(String studentId, String subjectId) {
+    public ResponseStructure attachSubject(AttachSubject attachSubject) {
         try {
-            Student student = studentRep.findById(UUID.fromString(studentId)).get();
-            Subject subject = subjectRep.findById(UUID.fromString(subjectId)).get();
+            Student student = studentRep.findById(UUID.fromString(attachSubject.getStudentId())).get();
             List<Subject> studentSubjectList = student.getSubject();
-            if (studentSubjectList.stream().anyMatch(sub -> sub.getId() == subject.getId())) {
-                response.setSuccess(false);
-                response.setMessage("Fan oldindan mavjud");
-                return response;
+            List<Subject> subjectList = attachSubject.getSubjectIds().stream()
+                    .map(id -> subjectRep.findById(UUID.fromString(id)).get())
+                    .toList();
+            List<String> alreadyExistsSubjectId = new ArrayList<>();
+            for (Subject subject : subjectList) {
+                if (studentSubjectList.contains(subject)) {
+                    response.setMessage("Avvaldan biriktirilgan fanlar mavjud");
+                    alreadyExistsSubjectId.add(subject.getId().toString());
+                } else {
+                    studentSubjectList.add(subject);
+                }
             }
-            studentSubjectList.add(subject);
             student.setSubject(studentSubjectList);
             studentRep.save(student);
             response.setSuccess(true);
-            response.setMessage("");
+            response.setData(alreadyExistsSubjectId);
         } catch (Exception e) {
             response.setSuccess(false);
             response.setMessage("Student yoki Fan topilmadi");
+            response.setData(null);
         }
         return response;
     }
@@ -143,6 +131,7 @@ public class AdminService {
                 UUID userId = ((Student) authentication.getPrincipal()).getId();
                 Student student = studentRep.findById(userId).get();
                 response.setSuccess(true);
+                response.setMessage("");
                 response.setData(subjectMap.toDTO(student.getSubject()));
             } else if (isStudent.equals("false")) {
                 response.setSuccess(true);
@@ -214,44 +203,39 @@ public class AdminService {
         } else {
             response.setSuccess(false);
             response.setMessage("Fan oldindan mavjud");
+            response.setData(null);
         }
         return response;
     }
 
-    public ResponseStructure addUser(UserForRegister request, MultipartFile file, UUID subjectId) {
+    public ResponseStructure addUser(UserForRegister request, String subjectId) {
         Subject subject;
         try {
-            subject = subjectRep.findById(subjectId).orElseThrow();
+            subject = subjectRep.findById(UUID.fromString(subjectId)).orElseThrow();
         } catch (Exception e) {
             response.setSuccess(false);
             response.setMessage("Fan topilmadi");
+            response.setData(null);
             return response;
         }
         if (isHave(request.getUsername())) {
             response.setSuccess(false);
             response.setMessage("Username oldindan mavjud");
+            response.setData(null);
             return response;
         } else {
-            String imgUrl = "";
-            if (!file.isEmpty()) {
-                try {
-                    imgUrl = imageSer.uploadImage(file);
-                } catch (Exception e) {
-                    response.setSuccess(false);
-                    response.setMessage("Rasm yuklashda xatolik");
-                    return response;
-                }
-            }
             try {
-                if (request.isStudent()) studentRep.save(studentMap.toModel(request, subject, imgUrl));
-                else teacherRep.save(teacherMap.toModel(request, subject, imgUrl));
+                if (request.getIsStudent()) studentRep.save(studentMap.toModel(request, subject));
+                else teacherRep.save(teacherMap.toModel(request, subject));
                 log.info("Saqlandi username: {}", request.getUsername());
                 response.setSuccess(true);
-                response.setMessage("saqlandi");
+                response.setMessage("Saqlandi");
+                response.setData(null);
                 return response;
             } catch (ConstraintViolationException e) {
                 response.setSuccess(false);
                 response.setMessage("Ko'zda tutilmagan xatolik");
+                response.setData(null);
                 return response;
             }
         }

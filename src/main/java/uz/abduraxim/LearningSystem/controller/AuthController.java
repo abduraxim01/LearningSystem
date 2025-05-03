@@ -27,8 +27,8 @@ public class AuthController {
 
     @PreAuthorize(value = "hasAnyRole('ADMIN','TEACHER','STUDENT')")
     @GetMapping(value = "/getCurrentUser/{username}")
-    public ResponseEntity<?> getCurrentUser(@PathVariable("username") String username,
+    public ResponseEntity<?> getCurrentUser(@PathVariable String username,
                                             Authentication authentication) {
-        return ResponseEntity.ok(login.getCurrentUser(authentication,username));
+        return ResponseEntity.ok(login.getCurrentUser(authentication, username));
     }
 }
