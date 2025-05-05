@@ -5,14 +5,15 @@ import jakarta.validation.ConstraintViolationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
 import uz.abduraxim.LearningSystem.DTO.request.AttachSubject;
+import uz.abduraxim.LearningSystem.DTO.request.UserForChangeDetails;
 import uz.abduraxim.LearningSystem.DTO.request.UserForRegister;
 import uz.abduraxim.LearningSystem.mapper.StudentMapper;
 import uz.abduraxim.LearningSystem.mapper.SubjectMapper;
 import uz.abduraxim.LearningSystem.mapper.TeacherMapper;
+import uz.abduraxim.LearningSystem.model.Answer;
 import uz.abduraxim.LearningSystem.model.Student;
 import uz.abduraxim.LearningSystem.model.Subject;
 import uz.abduraxim.LearningSystem.model.Teacher;
@@ -53,6 +54,13 @@ public class AdminService {
         this.subjectMap = subjectMap;
     }
 
+//    public ResponseStructure getAnswers(String username) {
+//        if (studentRep.existsStudentByUsername(username)) {
+//            List<Answer> answers = studentRep.findStudentByUsername(username).getAnswerList();
+//        }
+//        return response;
+//    }
+
     @Transactional
     public ResponseStructure deleteUser(String username) {
         boolean studentExists = studentRep.existsStudentByUsername(username);
@@ -70,33 +78,50 @@ public class AdminService {
         return response;
     }
 
-    public ResponseStructure updateUserDetails(String userId, String newName, String newUsername, String newPassword, String imgUrl, boolean isStudent) {
-        if (isHave(newUsername)) {
-            response.setSuccess(false);
-            response.setMessage("Username mavjud");
-            response.setData(null);
-        } else {
-            try {
-                if (isStudent) {
-                    Student student = studentRep.findById(UUID.fromString(userId)).get();
-                    studentRep.save(studentMap.toModel(student, newName, newUsername, newPassword, imgUrl));
-                } else {
-                    Teacher teacher = teacherRep.findById(UUID.fromString(userId)).get();
-                    teacherRep.save(teacherMap.toModel(teacher, newName, newUsername, newPassword, imgUrl));
+    public ResponseStructure updateUserDetails(UserForChangeDetails user) {
+        if (isHave(user.getNewUsername())) {
+            if (user.getIsStudent()) {
+                if (!UUID.fromString(user.getId()).equals(studentRep.findStudentByUsername(user.getNewUsername()).getId())) {
+                    response.setSuccess(false);
+                    response.setMessage("Username mavjud");
+                    response.setData(null);
+                    return response;
                 }
-                response.setSuccess(true);
-                response.setMessage("");
-                response.setData(null);
-            } catch (Exception e) {
+            } else if (!UUID.fromString(user.getId()).equals(teacherRep.findTeacherByUsername(user.getNewUsername()).getId())) {
                 response.setSuccess(false);
-                response.setMessage("User topilmadi yoki ko'zda tutilmagan xatolik");
+                response.setMessage("Username mavjud");
                 response.setData(null);
+                return response;
             }
         }
+        try {
+            if (user.getIsStudent()) {
+                Student student = studentRep.findById(UUID.fromString(user.getId())).get();
+                studentRep.save(studentMap.toModel(student, user));
+                return attachSubject(AttachSubject.builder()
+                        .studentId(user.getId())
+                        .subjectIds(user.getSubjectIds())
+                        .build());
+            } else {
+                Teacher teacher = teacherRep.findById(UUID.fromString(user.getId())).get();
+                Subject subject = subjectRep.findById(UUID.fromString(user.getSubjectIds().get(0))).get();
+                teacher.setSubject(subject);
+                teacherRep.save(teacherMap.toModel(teacher, user.getNewName(), user.getNewUsername(), user.getNewPassword(), user.getImgUrl()));
+            }
+            response.setSuccess(true);
+            response.setMessage("");
+            response.setData(null);
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("User topilmadi yoki ko'zda tutilmagan xatolik");
+            response.setData(null);
+        }
+
         return response;
     }
 
     public ResponseStructure attachSubject(AttachSubject attachSubject) {
+        response.setMessage("");
         try {
             Student student = studentRep.findById(UUID.fromString(attachSubject.getStudentId())).get();
             List<Subject> studentSubjectList = student.getSubject();
@@ -124,23 +149,29 @@ public class AdminService {
         return response;
     }
 
-    public ResponseStructure getSubjectList(Authentication authentication, String isStudent) {
-        ResponseStructure response = new ResponseStructure();
+    public ResponseStructure getSubjectList(String username) {
         try {
-            if (isStudent.equals("true")) {
-                UUID userId = ((Student) authentication.getPrincipal()).getId();
-                Student student = studentRep.findById(userId).get();
+            if (studentRep.existsStudentByUsername(username)) {
+                response.setData(subjectMap.toDTO(studentRep.findStudentByUsername(username).getSubject()));
                 response.setSuccess(true);
                 response.setMessage("");
-                response.setData(subjectMap.toDTO(student.getSubject()));
-            } else if (isStudent.equals("false")) {
-                response.setSuccess(true);
-                response.setMessage("");
+            } else if (teacherRep.existsTeacherByUsername(username) && username.equals("admin")) {
                 response.setData(subjectMap.toDTO(subjectRep.findAll()));
+                response.setSuccess(true);
+                response.setMessage("");
+            } else if (teacherRep.existsTeacherByUsername(username)) {
+                response.setData(subjectMap.toDTO(teacherRep.findTeacherByUsername(username).getSubject()));
+                response.setSuccess(true);
+                response.setMessage("");
+            } else {
+                response.setSuccess(false);
+                response.setMessage("Foydalanuvchi topilmadi");
+                response.setData(null);
             }
         } catch (Exception e) {
             response.setSuccess(false);
             response.setMessage("Noto'gri so'rov");
+            response.setData(null);
         }
         return response;
     }

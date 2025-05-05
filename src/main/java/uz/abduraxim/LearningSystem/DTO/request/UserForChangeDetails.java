@@ -1,5 +1,6 @@
 package uz.abduraxim.LearningSystem.DTO.request;
 
+import java.util.List;
 
 import lombok.*;
 
@@ -21,4 +22,6 @@ public class UserForChangeDetails {
     private String imgUrl;
 
     private Boolean isStudent;
+
+    private List<String> subjectIds;
 }
