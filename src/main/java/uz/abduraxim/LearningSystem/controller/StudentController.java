@@ -6,11 +6,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import uz.abduraxim.LearningSystem.DTO.request.AnswerToQuestion;
-import uz.abduraxim.LearningSystem.model.Student;
 import uz.abduraxim.LearningSystem.service.StudentService;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping(value = "/api/student")

@@ -60,7 +60,7 @@ public class SecurityConfiguration {
                             .requestMatchers("/api/student/answerToQuestion").hasRole("STUDENT")
                             .requestMatchers("/api/getCurrentUser/{username}").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                             .requestMatchers("/api/student/getQuestions/{subjectId}").hasAnyRole("ADMIN", "STUDENT")
-                            .requestMatchers("/api/admin/getSubjectList/{isStudent}").hasAnyRole("ADMIN", "STUDENT", "TEACHER")
+                            .requestMatchers("/api/admin/getSubjectList/{username}").hasAnyRole("ADMIN", "STUDENT", "TEACHER")
                             .anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import uz.abduraxim.LearningSystem.DTO.request.AttachSubject;
@@ -31,7 +30,7 @@ public class AdminController {
     @PreAuthorize(value = "hasRole('ADMIN')")
     @PutMapping(value = "/changeUserDetails")
     public ResponseEntity<?> changeUserDetails(@RequestBody UserForChangeDetails details) {
-        return ResponseEntity.ok(adminSer.updateUserDetails(details.getId(), details.getNewName(), details.getNewUsername(), details.getNewPassword(), details.getImgUrl(), details.getIsStudent()));
+        return ResponseEntity.ok(adminSer.updateUserDetails(details));
     }
 
     @PreAuthorize(value = "hasRole('ADMIN')")
@@ -89,10 +88,16 @@ public class AdminController {
         return ResponseEntity.ok(adminSer.getAllStudents());
     }
 
-    @PreAuthorize(value = "hasAnyRole('ADMIN', 'STUDENT')")
-    @GetMapping(value = "/getSubjectList/{isStudent}")
-    public ResponseEntity<?> getSubjectList(@PathVariable String isStudent,
-                                            Authentication authentication) {
-        return ResponseEntity.ok(adminSer.getSubjectList(authentication, isStudent));
+    @PreAuthorize(value = "hasAnyRole('ADMIN','TEACHER', 'STUDENT')")
+    @GetMapping(value = "/getSubjectList/{username}")
+    public ResponseEntity<?> getSubjectList(@PathVariable String username) {
+        return ResponseEntity.ok(adminSer.getSubjectList(username));
     }
+
+    // must add
+//    @PreAuthorize(value = "hasRole('ADMIN')")
+//    @GetMapping(value = "/getAnswers/{username}")
+//    public ResponseEntity<?> getAnswers(@PathVariable String username){
+//
+//    }
 }

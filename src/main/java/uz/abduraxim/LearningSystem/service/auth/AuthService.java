@@ -1,5 +1,7 @@
 package uz.abduraxim.LearningSystem.service.auth;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,6 +39,8 @@ public class AuthService implements UserDetailsService {
 
     private final ResponseStructure response = new ResponseStructure();
 
+    private final Logger log = LogManager.getLogger(AuthService.class);
+
     @Autowired
     public AuthService(StudentRepository studentRep, TeacherRepository teacherRep, JwtUtil jwtUtil, StudentMapper studentMap, TeacherMapper teacherMap) {
         this.studentRep = studentRep;
@@ -67,9 +71,11 @@ public class AuthService implements UserDetailsService {
                     .role(user.getAuthorities().toString().substring(6, user.getAuthorities().toString().length() - 1))
                     .token(jwtUtil.encode(username, user.getAuthorities()))
                     .build());
+            log.info("Login muvafaqqiyatli, Username: {}", username);
         } else {
             response.setSuccess(false);
             response.setMessage("Password yoki username xato");
+            log.info("Login muvafaqqiyatsiz, Username: {}", username);
         }
         return response;
     }
