@@ -7,7 +7,7 @@ import okhttp3.RequestBody;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
+import uz.abduraxim.LearningSystem.DTO.response.ResponseStructure;
 
 import java.io.IOException;
 import java.util.UUID;

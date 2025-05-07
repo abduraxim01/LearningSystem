@@ -21,7 +21,6 @@ public class StudentController {
         this.studentSer = studentSer;
     }
 
-    // changed
     @PreAuthorize(value = "hasRole('STUDENT')")
     @PostMapping(value = "/answerToQuestion")
     public ResponseEntity<?> answerToQuestion(@RequestBody List<AnswerToQuestion> answerList,

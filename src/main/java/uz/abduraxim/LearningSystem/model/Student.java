@@ -58,4 +58,7 @@ public class Student implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
+
+    @OneToOne(mappedBy = "student")
+    private Teacher teacher;
 }

@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
+import uz.abduraxim.LearningSystem.DTO.response.ResponseStructure;
 import uz.abduraxim.LearningSystem.DTO.response.AuthResponse;
 import uz.abduraxim.LearningSystem.mapper.StudentMapper;
 import uz.abduraxim.LearningSystem.mapper.TeacherMapper;

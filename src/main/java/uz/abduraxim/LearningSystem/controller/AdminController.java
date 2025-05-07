@@ -6,10 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import uz.abduraxim.LearningSystem.DTO.request.AttachSubject;
-import uz.abduraxim.LearningSystem.DTO.request.SubjectRequest;
-import uz.abduraxim.LearningSystem.DTO.request.UserForChangeDetails;
-import uz.abduraxim.LearningSystem.DTO.request.UserForRegister;
+import uz.abduraxim.LearningSystem.DTO.request.*;
 import uz.abduraxim.LearningSystem.service.AdminService;
 import uz.abduraxim.LearningSystem.service.ImageService;
 
@@ -94,10 +91,9 @@ public class AdminController {
         return ResponseEntity.ok(adminSer.getSubjectList(username));
     }
 
-    // must add
-//    @PreAuthorize(value = "hasRole('ADMIN')")
-//    @GetMapping(value = "/getAnswers/{username}")
-//    public ResponseEntity<?> getAnswers(@PathVariable String username){
-//
-//    }
+    @PreAuthorize(value = "hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @GetMapping(value = "/getAnswers")
+    public ResponseEntity<?> getAnswers(@RequestBody AnswersRequest request) {
+        return ResponseEntity.ok(adminSer.getCorrectAnswerCounts(request));
+    }
 }

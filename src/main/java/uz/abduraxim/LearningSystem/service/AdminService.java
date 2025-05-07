@@ -6,10 +6,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
+import uz.abduraxim.LearningSystem.DTO.request.AnswersRequest;
 import uz.abduraxim.LearningSystem.DTO.request.AttachSubject;
 import uz.abduraxim.LearningSystem.DTO.request.UserForChangeDetails;
 import uz.abduraxim.LearningSystem.DTO.request.UserForRegister;
+import uz.abduraxim.LearningSystem.DTO.response.ResponseStructure;
 import uz.abduraxim.LearningSystem.mapper.StudentMapper;
 import uz.abduraxim.LearningSystem.mapper.SubjectMapper;
 import uz.abduraxim.LearningSystem.mapper.TeacherMapper;
@@ -17,13 +18,13 @@ import uz.abduraxim.LearningSystem.model.Answer;
 import uz.abduraxim.LearningSystem.model.Student;
 import uz.abduraxim.LearningSystem.model.Subject;
 import uz.abduraxim.LearningSystem.model.Teacher;
+import uz.abduraxim.LearningSystem.repository.AnswerRepository;
 import uz.abduraxim.LearningSystem.repository.StudentRepository;
 import uz.abduraxim.LearningSystem.repository.SubjectRepository;
 import uz.abduraxim.LearningSystem.repository.TeacherRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminService {
@@ -44,22 +45,78 @@ public class AdminService {
 
     private final ResponseStructure response = new ResponseStructure();
 
+    private final AnswerRepository answerRep;
+
     @Autowired
-    public AdminService(TeacherRepository teacherRep, StudentRepository studentRep, TeacherMapper teacherMap, StudentMapper studentMap, SubjectRepository subjectRep, SubjectMapper subjectMap) {
+    public AdminService(TeacherRepository teacherRep, StudentRepository studentRep, TeacherMapper teacherMap, StudentMapper studentMap, SubjectRepository subjectRep, SubjectMapper subjectMap, AnswerRepository answerRep) {
         this.teacherRep = teacherRep;
         this.studentRep = studentRep;
         this.teacherMap = teacherMap;
         this.studentMap = studentMap;
         this.subjectRep = subjectRep;
         this.subjectMap = subjectMap;
+        this.answerRep = answerRep;
     }
 
-//    public ResponseStructure getAnswers(String username) {
-//        if (studentRep.existsStudentByUsername(username)) {
-//            List<Answer> answers = studentRep.findStudentByUsername(username).getAnswerList();
-//        }
-//        return response;
-//    }
+    public ResponseStructure getCorrectAnswerCounts(AnswersRequest request) {
+        UUID studentId = null;
+        UUID subjectId = null;
+
+        try {
+            if (request.getStudentId() != null && !request.getStudentId().isBlank()) {
+                studentId = UUID.fromString(request.getStudentId());
+                System.out.println("StudentId: " + studentId);
+            }
+            if (request.getSubjectId() != null && !request.getSubjectId().isBlank()) {
+                subjectId = UUID.fromString(request.getSubjectId());
+                System.out.println("SubjectId: " + subjectId);
+            }
+        } catch (Exception e) {
+            response.setMessage("ID noto‘g‘ri formatda");
+            response.setSuccess(false);
+            return response;
+        }
+
+        List<Answer> answers = answerRep.findAll(); // barcha javoblar
+
+        // Faqat to‘g‘ri javoblar
+        UUID finalStudentId = studentId;
+        UUID finalStudentId1 = studentId;
+        UUID finalSubjectId = subjectId;
+        List<Answer> correctAnswers = answers.stream()
+                .filter(Answer::isCorrect)
+                .filter(ans -> finalStudentId == null || ans.getStudent().getId().equals(finalStudentId1))
+                .filter(ans -> finalSubjectId == null || ans.getQuestion().getSubject().getId().equals(finalSubjectId))
+                .toList();
+
+        // Group by Student ID + Subject Name
+        Map<String, Map<String, Long>> grouped = correctAnswers.stream()
+                .collect(Collectors.groupingBy(
+                        ans -> ans.getStudent().getUsername(),
+                        Collectors.groupingBy(
+                                ans -> ans.getQuestion().getSubject().getName(),
+                                Collectors.counting()
+                        )
+                ));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<String, Map<String, Long>> studentEntry : grouped.entrySet()) {
+            String studentUsername = studentEntry.getKey();
+            for (Map.Entry<String, Long> subjectEntry : studentEntry.getValue().entrySet()) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("studentName", studentRep.findStudentByUsername(studentUsername).getName());
+                item.put("username", studentUsername);
+                item.put("subject", subjectEntry.getKey());
+                item.put("count", subjectEntry.getValue());
+                result.add(item);
+            }
+        }
+
+        response.setData(result);
+        response.setSuccess(true);
+        response.setMessage("");
+        return response;
+    }
 
     @Transactional
     public ResponseStructure deleteUser(String username) {
