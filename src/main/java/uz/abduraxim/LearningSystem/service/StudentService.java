@@ -3,7 +3,7 @@ package uz.abduraxim.LearningSystem.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import uz.abduraxim.LearningSystem.DTO.ResponseStructure;
+import uz.abduraxim.LearningSystem.DTO.response.ResponseStructure;
 import uz.abduraxim.LearningSystem.DTO.request.AnswerToQuestion;
 import uz.abduraxim.LearningSystem.DTO.response.QuestionResponse;
 import uz.abduraxim.LearningSystem.mapper.QuestionMapper;
