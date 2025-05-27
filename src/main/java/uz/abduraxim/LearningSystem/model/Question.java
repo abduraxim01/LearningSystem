@@ -25,6 +25,8 @@ public class Question {
     @Column(nullable = false)
     private String content;
 
+    private String description;
+
     @ManyToOne
     @JsonBackReference
     @JoinColumn(name = "subject_id")

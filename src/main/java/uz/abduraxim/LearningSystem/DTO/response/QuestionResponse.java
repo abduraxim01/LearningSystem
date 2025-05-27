@@ -16,5 +16,7 @@ public class QuestionResponse {
 
     private String content;
 
+    private String description;
+
     private List<QuestionOptionResponse> optionList;
 }

@@ -13,5 +13,7 @@ public class QuestionRequest {
 
     private String content;
 
+    private String description;
+
     private List<QuestionOptionRequest> optionList;
 }

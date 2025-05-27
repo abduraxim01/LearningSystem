@@ -25,14 +25,14 @@ public class TeacherController {
     @PostMapping(value = "/addQuestion")
     public ResponseEntity<?> addQuestion(@RequestBody QuestionRequest request,
                                          Authentication authentication) {
-        return ResponseEntity.ok(teacherSer.addQuestion(request.getContent(), request.getOptionList(), authentication));
+        return ResponseEntity.ok(teacherSer.addQuestion(request.getContent(),request.getDescription(), request.getOptionList(), authentication));
     }
 
     @PreAuthorize(value = "hasRole('TEACHER')")
     @PutMapping(value = "/updateQuestion/{questionId}")
     public ResponseEntity<?> updateQuestion(@PathVariable String questionId,
                                             @RequestBody QuestionRequest request) {
-        return ResponseEntity.ok(teacherSer.updateQuestion(questionId, request.getContent(), request.getOptionList()));
+        return ResponseEntity.ok(teacherSer.updateQuestion(questionId, request.getContent(),request.getDescription(), request.getOptionList()));
     }
 
     @PreAuthorize(value = "hasRole('TEACHER')")

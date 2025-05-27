@@ -82,15 +82,6 @@ public class StudentService {
         try {
             UUID studentId = ((Student) authentication.getPrincipal()).getId();
             student = studentRep.findById(studentId).get();
-//            List<Answer> answers = answerList.stream()
-//                    .filter(ans -> ans.getOptionId() != null)
-//                    .map(ans -> Answer.builder()
-//                            .question(questionRep.findById(ans.getQuestionId()).get())
-//                            .isCorrect(questionOptionRep.findById(ans.getOptionId()).get().isCorrect())
-//                            .student(studentRep.findById(studentId).get())
-//                            .build())
-//                    .toList();
-//            answerRep.saveAll(answers);
 
             List<Answer> answers = new ArrayList<>();
             Question question;

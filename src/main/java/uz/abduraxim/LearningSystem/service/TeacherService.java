@@ -53,10 +53,15 @@ public class TeacherService {
         return response;
     }
 
-    public ResponseStructure updateQuestion(String questionId, String content, List<QuestionOptionRequest> optionReqList) {
+    public ResponseStructure updateQuestion(String questionId, String content, String description, List<QuestionOptionRequest> optionReqList) {
         try {
             Question question = questionRep.findById(UUID.fromString(questionId)).get();
-            question.setContent(content);
+            if (content != null) {
+                question.setContent(content);
+            }
+            if (description != null) {
+                question.setDescription(description);
+            }
             questionRep.save(question);
             List<QuestionOption> optionList = question.getOptionList();
             for (int i = 0; i < 4; i++) {
@@ -100,7 +105,7 @@ public class TeacherService {
         return response;
     }
 
-    public ResponseStructure addQuestion(String content, List<QuestionOptionRequest> optionList, Authentication authentication) {
+    public ResponseStructure addQuestion(String content, String description, List<QuestionOptionRequest> optionList, Authentication authentication) {
         Teacher teacher;
         response.setData(null);
         try {
@@ -117,6 +122,7 @@ public class TeacherService {
                     .subject(subject)
                     .teacher(teacher)
                     .content(content)
+                    .description(description)
                     .build());
             questionOptRep.saveAll(questionOptMap.toModel(optionList, question));
             response.setSuccess(true);
