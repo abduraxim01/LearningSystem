@@ -64,10 +64,15 @@ public class AuthService implements UserDetailsService {
         ResponseStructure response = new ResponseStructure();
         UserDetails user = this.loadUserByUsername(username);
         if (user != null && encoder.matches(password, user.getPassword())) {
+            String userId;
+            if (studentRep.existsStudentByUsername(username))
+                userId = studentRep.findStudentByUsername(username).getId().toString();
+            else userId = teacherRep.findTeacherByUsername(username).getId().toString();
             response.setSuccess(true);
             response.setMessage("Muvafaqqiyatli");
             response.setData(AuthResponse.builder()
                     .username(username)
+                    .id(userId)
                     .role(user.getAuthorities().toString().substring(6, user.getAuthorities().toString().length() - 1))
                     .token(jwtUtil.encode(username, user.getAuthorities()))
                     .build());

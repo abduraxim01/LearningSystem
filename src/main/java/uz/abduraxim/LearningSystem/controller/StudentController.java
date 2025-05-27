@@ -28,7 +28,7 @@ public class StudentController {
         return ResponseEntity.ok(studentSer.answerToQuestion(authentication, answerList));
     }
 
-    @PreAuthorize(value = "hasAnyRole('STUDENT','ADMIN')")
+    @PreAuthorize(value = "hasAnyRole('STUDENT','ADMIN','SUPERADMIN')")
     @GetMapping(value = "/getQuestions/{subjectId}")
     public ResponseEntity<?> getQuestions(@PathVariable String subjectId) {
         return ResponseEntity.ok(studentSer.getQuestions(subjectId));

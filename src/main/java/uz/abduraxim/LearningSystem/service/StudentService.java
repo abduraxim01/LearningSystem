@@ -12,6 +12,7 @@ import uz.abduraxim.LearningSystem.model.Question;
 import uz.abduraxim.LearningSystem.model.Student;
 import uz.abduraxim.LearningSystem.repository.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -66,9 +67,10 @@ public class StudentService {
     }
 
     public ResponseStructure answerToQuestion(Authentication authentication, List<AnswerToQuestion> answerList) {
-        long count;
+        long count = 0;
         try {
             count = answerList.stream()
+                    .filter(ans -> ans.getOptionId() != null)
                     .filter(ans -> questionOptionRep.findById(ans.getOptionId()).get().isCorrect())
                     .count();
         } catch (Exception e) {
@@ -76,22 +78,46 @@ public class StudentService {
             response.setMessage("Variant topilmadi");
             return response;
         }
+        Student student;
         try {
             UUID studentId = ((Student) authentication.getPrincipal()).getId();
-            List<Answer> answers = answerList.stream()
-                    .map(ans -> Answer.builder()
-                            .question(questionRep.findById(ans.getQuestionId()).get())
-                            .isCorrect(questionOptionRep.findById(ans.getOptionId()).get().isCorrect())
-                            .student(studentRep.findById(studentId).get())
-                            .build())
-                    .toList();
+            student = studentRep.findById(studentId).get();
+//            List<Answer> answers = answerList.stream()
+//                    .filter(ans -> ans.getOptionId() != null)
+//                    .map(ans -> Answer.builder()
+//                            .question(questionRep.findById(ans.getQuestionId()).get())
+//                            .isCorrect(questionOptionRep.findById(ans.getOptionId()).get().isCorrect())
+//                            .student(studentRep.findById(studentId).get())
+//                            .build())
+//                    .toList();
+//            answerRep.saveAll(answers);
+
+            List<Answer> answers = new ArrayList<>();
+            Question question;
+            Answer answer1;
+            for (AnswerToQuestion answer : answerList) {
+                question = questionRep.findById(answer.getQuestionId()).get();
+                boolean res = answer.getOptionId() != null && questionOptionRep.findById(answer.getOptionId()).get().isCorrect();
+                if (answerRep.existsAnswerByStudentAndQuestion(student, question)) {
+                    answer1 = answerRep.findAnswerByStudentAndQuestion(student, question);
+                    answer1.setCorrect(res);
+                } else {
+                    answer1 = Answer.builder()
+                            .question(question)
+                            .student(student)
+                            .isCorrect(res)
+                            .build();
+                }
+                answers.add(answer1);
+            }
+
             answerRep.saveAll(answers);
             response.setSuccess(true);
             response.setData(count);
             response.setMessage("");
         } catch (Exception e) {
             response.setSuccess(false);
-            response.setMessage("Savol topilmadi yoki qandaydir xatolik");
+            response.setMessage("Savol topilmadi yoki qandaydir xatolik" + e.getMessage());
             response.setData(null);
         }
         return response;

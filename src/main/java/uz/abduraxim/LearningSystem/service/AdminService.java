@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import uz.abduraxim.LearningSystem.DTO.request.AnswersRequest;
 import uz.abduraxim.LearningSystem.DTO.request.AttachSubject;
@@ -14,10 +15,7 @@ import uz.abduraxim.LearningSystem.DTO.response.ResponseStructure;
 import uz.abduraxim.LearningSystem.mapper.StudentMapper;
 import uz.abduraxim.LearningSystem.mapper.SubjectMapper;
 import uz.abduraxim.LearningSystem.mapper.TeacherMapper;
-import uz.abduraxim.LearningSystem.model.Answer;
-import uz.abduraxim.LearningSystem.model.Student;
-import uz.abduraxim.LearningSystem.model.Subject;
-import uz.abduraxim.LearningSystem.model.Teacher;
+import uz.abduraxim.LearningSystem.model.*;
 import uz.abduraxim.LearningSystem.repository.AnswerRepository;
 import uz.abduraxim.LearningSystem.repository.StudentRepository;
 import uz.abduraxim.LearningSystem.repository.SubjectRepository;
@@ -58,22 +56,27 @@ public class AdminService {
         this.answerRep = answerRep;
     }
 
-    public ResponseStructure getCorrectAnswerCounts(AnswersRequest request) {
+    public ResponseStructure getCorrectAnswerCounts(Authentication authentication, AnswersRequest request) {
         UUID studentId = null;
         UUID subjectId = null;
-
         try {
+            Teacher teacher = null;
+
+            if (request.getStudentId().isBlank()) {
+                teacher = teacherRep.findById(((Teacher) authentication.getPrincipal()).getId()).orElseThrow();
+            }
             if (request.getStudentId() != null && !request.getStudentId().isBlank()) {
                 studentId = UUID.fromString(request.getStudentId());
-                System.out.println("StudentId: " + studentId);
             }
             if (request.getSubjectId() != null && !request.getSubjectId().isBlank()) {
                 subjectId = UUID.fromString(request.getSubjectId());
-                System.out.println("SubjectId: " + subjectId);
+            } else if (request.getSubjectId().isBlank() && teacher != null) {
+                if (teacher.getRole().equals(Role.TEACHER)) subjectId = teacher.getSubject().getId();
             }
         } catch (Exception e) {
-            response.setMessage("ID noto‘g‘ri formatda");
+            response.setMessage("ID noto‘g‘ri formatda" + e.getMessage());
             response.setSuccess(false);
+            response.setData(null);
             return response;
         }
 
@@ -161,8 +164,10 @@ public class AdminService {
                         .build());
             } else {
                 Teacher teacher = teacherRep.findById(UUID.fromString(user.getId())).get();
-                Subject subject = subjectRep.findById(UUID.fromString(user.getSubjectIds().get(0))).get();
-                teacher.setSubject(subject);
+                if (teacher.getRole().toString().equals("TEACHER")) {
+                    Subject subject = subjectRep.findById(UUID.fromString(user.getSubjectIds().get(0))).get();
+                    teacher.setSubject(subject);
+                }
                 teacherRep.save(teacherMap.toModel(teacher, user.getNewName(), user.getNewUsername(), user.getNewPassword(), user.getImgUrl()));
             }
             response.setSuccess(true);
@@ -233,10 +238,12 @@ public class AdminService {
         return response;
     }
 
-    public ResponseStructure getAllTeachers() {
+    public ResponseStructure getAdminOrAllTeacherList(Role role) {
         response.setSuccess(true);
         response.setMessage("");
-        response.setData(teacherMap.toDTO(teacherRep.findAll()));
+        response.setData(teacherMap.toDTO(teacherRep.findAll()).stream()
+                .filter(teacher -> teacherRep.findById(teacher.getId()).get().getRole().equals(role))
+                .toList());
         return response;
     }
 
@@ -292,6 +299,21 @@ public class AdminService {
             response.setSuccess(false);
             response.setMessage("Fan oldindan mavjud");
             response.setData(null);
+        }
+        return response;
+    }
+
+    public ResponseStructure addAdmin(UserForRegister register) {
+        if (isHave(register.getUsername())) {
+            response.setSuccess(false);
+            response.setMessage("Username oldindan mavjud");
+            response.setData(null);
+            return response;
+        } else {
+            teacherRep.save(teacherMap.toModel(register, null));
+            response.setData(null);
+            response.setSuccess(true);
+            response.setMessage("");
         }
         return response;
     }
