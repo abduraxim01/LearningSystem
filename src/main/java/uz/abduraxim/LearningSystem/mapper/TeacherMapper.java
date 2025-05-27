@@ -20,7 +20,7 @@ public class TeacherMapper {
     public Teacher toModel(Teacher teacher, String newName, String newUsername, String newPassword, String imgUrl) {
         teacher.setName(newName);
         teacher.setUsername(newUsername);
-        teacher.setPassword(encoder.encode(newPassword));
+        if (newPassword != null) teacher.setPassword(encoder.encode(newPassword));
         if (imgUrl != null) teacher.setImageUrl(imgUrl);
         return teacher;
     }
@@ -42,13 +42,18 @@ public class TeacherMapper {
     }
 
     public Teacher toModel(UserForRegister request, Subject subject) {
-        return Teacher.builder()
+        Teacher teacher = Teacher.builder()
                 .name(request.getName())
                 .username(request.getUsername())
                 .password(encoder.encode(request.getPassword()))
-                .subject(subject)
                 .imageUrl(request.getImgUrl())
-                .role(Role.TEACHER)
                 .build();
+        if (subject == null) {
+            teacher.setRole(Role.ADMIN);
+        } else {
+            teacher.setSubject(subject);
+            teacher.setRole(Role.TEACHER);
+        }
+        return teacher;
     }
 }

@@ -34,7 +34,7 @@ public class LearningSystemApplication {
                         .name("Admin")
                         .username("admin")
                         .password(encoder.encode("admin"))
-                        .role(Role.ADMIN)
+                        .role(Role.SUPERADMIN)
                         .build());
             }
         };

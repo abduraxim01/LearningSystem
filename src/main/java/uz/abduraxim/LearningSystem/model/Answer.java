@@ -12,6 +12,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"student_id", "question_id"})
+        }
+)
 public class Answer {
     @Id
     @GeneratedValue(generator = "UUID")

@@ -15,6 +15,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import uz.abduraxim.LearningSystem.service.auth.AuthService;
 import uz.abduraxim.LearningSystem.service.jwtService.JwtFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -35,33 +38,52 @@ public class SecurityConfiguration {
         this.jwtFilter = jwtFilter;
     }
 
+
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.addAllowedOriginPattern("*"); // yoki aniq frontend domeni: http://localhost:3000
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return new CorsFilter(source);
+    }
+
+
     @Bean
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
         return http
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(requestConfigurer -> {
                     requestConfigurer
                             .requestMatchers(WHITE_LIST).permitAll()
-                            .requestMatchers("/api/admin/addUser/{subjectId}").hasRole("ADMIN")
-                            .requestMatchers("/api/admin/uploadImage").hasRole("ADMIN")
-                            .requestMatchers("/api/admin/addSubject").hasRole("ADMIN")
-                            .requestMatchers("/api/admin/deleteUser/{username}").hasRole("ADMIN")
-                            .requestMatchers("/api/admin/deleteSubject/{subjectId}").hasRole("ADMIN")
-                            .requestMatchers("/api/admin/assignTeacherToSubject").hasRole("ADMIN")
+                            .requestMatchers("/api/admin/addUser/{subjectId}").hasAnyRole("ADMIN", "SUPERADMIN")
+                            .requestMatchers("/api/admin/addAdmin").hasRole("SUPERADMIN")
+                            .requestMatchers("/api/admin/uploadImage").hasAnyRole("ADMIN", "SUPERADMIN")
+                            .requestMatchers("/api/admin/addSubject").hasAnyRole("ADMIN", "SUPERADMIN")
+                            .requestMatchers("/api/admin/deleteUser/{username}").hasAnyRole("ADMIN", "SUPERADMIN")
+                            .requestMatchers("/api/admin/deleteSubject/{subjectId}").hasAnyRole("ADMIN", "SUPERADMIN")
+                            .requestMatchers("/api/admin/assignTeacherToSubject").hasAnyRole("ADMIN", "SUPERADMIN")
                             .requestMatchers("/api/teacher/addQuestion").hasRole("TEACHER")
                             .requestMatchers("/api/teacher/deleteQuestion/{questionId}").hasRole("TEACHER")
                             .requestMatchers("/api/teacher/getQuestions").hasRole("TEACHER")
                             .requestMatchers("/api/teacher/updateQuestion/{questionId}").hasRole("TEACHER")
-                            .requestMatchers("/api/admin/getStudentList").hasRole("ADMIN")
-                            .requestMatchers("/api/admin/getTeacherList").hasRole("ADMIN")
-                            .requestMatchers("/api/admin/updateSubject").hasRole("ADMIN")
-                            .requestMatchers("/api/admin/attachSubject").hasRole("ADMIN")
-                            .requestMatchers("/api/admin/changeUserDetails").hasRole("ADMIN")
+                            .requestMatchers("/api/admin/getStudentList").hasAnyRole("ADMIN", "SUPERADMIN")
+                            .requestMatchers("/api/admin/getTeacherList").hasAnyRole("ADMIN", "SUPERADMIN")
+                            .requestMatchers("/api/admin/getAdminList").hasRole("SUPERADMIN")
+                            .requestMatchers("/api/admin/updateSubject").hasAnyRole("ADMIN", "SUPERADMIN")
+                            .requestMatchers("/api/admin/attachSubject").hasAnyRole("ADMIN", "SUPERADMIN")
+                            .requestMatchers("/api/admin/changeUserDetails").hasAnyRole("ADMIN", "SUPERADMIN")
                             .requestMatchers("/api/student/answerToQuestion").hasRole("STUDENT")
-                            .requestMatchers("/api/getCurrentUser/{username}").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
-                            .requestMatchers("/api/student/getQuestions/{subjectId}").hasAnyRole("ADMIN", "STUDENT")
-                            .requestMatchers("/api/admin/getSubjectList/{username}").hasAnyRole("ADMIN", "STUDENT", "TEACHER")
-                            .requestMatchers("/api/admin/getAnswers").hasAnyRole("ADMIN", "STUDENT", "TEACHER")
+                            .requestMatchers("/api/getCurrentUser/{username}").hasAnyRole("ADMIN", "TEACHER", "STUDENT", "SUPERADMIN")
+                            .requestMatchers("/api/student/getQuestions/{subjectId}").hasAnyRole("ADMIN", "STUDENT", "SUPERADMIN")
+                            .requestMatchers("/api/admin/getSubjectList/{username}").hasAnyRole("ADMIN", "STUDENT", "TEACHER", "SUPERADMIN")
+                            .requestMatchers("/api/admin/getAnswers").hasAnyRole("ADMIN", "STUDENT", "TEACHER", "SUPERADMIN")
                             .anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -21,7 +21,7 @@ public class StudentMapper {
     public Student toModel(Student student, UserForChangeDetails user) {
         student.setName(user.getNewName());
         student.setUsername(user.getNewUsername());
-        student.setPassword(encoder.encode(user.getNewPassword()));
+        if (user.getNewPassword() != null) student.setPassword(encoder.encode(user.getNewPassword()));
         if (user.getImgUrl() != null) student.setImageUrl(user.getImgUrl());
         return student;
     }
