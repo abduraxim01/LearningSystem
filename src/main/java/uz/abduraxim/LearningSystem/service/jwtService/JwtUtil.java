@@ -18,14 +18,14 @@ import java.util.function.Function;
 @Service
 public class JwtUtil {
 
-    final private long TOKEN_LIVE_TIME = 1000 * 60 * 60 * 24; // a day
+    final private long TOKEN_LIVE_TIME = 1000L * 60 * 60 * 24 * 30; // 30 day
 
     final private String SECRET_KEY = "LaudateomnesgenteslaudateMagnificatinseculaEtanimamealaudateMagnificatinseculaHappynationlivininahappynationAddthistothedependenciesblockinyourbuildLetmeknowifyouneedfurtherassistance";
 
     public String encode(String username, Collection<? extends GrantedAuthority> authorities) {
         authorities = authorities.stream().filter(role -> role.toString().startsWith("ROLE_")).toList();
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("Created by: ", "https://abduraxim.uz");
+//        extraClaims.put("Created by: ", "https://abduraxim.uz");
         extraClaims.put("Role", authorities.toString().substring(6, authorities.toString().length() - 1));
 
 

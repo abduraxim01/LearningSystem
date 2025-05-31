@@ -115,6 +115,12 @@ public class AdminService {
             }
         }
 
+        result.sort((map1, map2) -> {
+            Long count1 = (Long) map1.get("count");
+            Long count2 = (Long) map2.get("count");
+            return count2.compareTo(count1); // descending order
+        });
+
         response.setData(result);
         response.setSuccess(true);
         response.setMessage("");
